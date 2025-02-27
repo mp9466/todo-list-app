@@ -7,47 +7,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadTasks() {
         
-        // taskList.innerHTML = "";
+        taskList.innerHTML = "";
         
-        // const tasks = await fetchTasks();
+        const tasks = await fetchTasks();
+
+        tasks.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         
-        // tasks.forEach(task => {
+        tasks.forEach(task => {
             
-        //     const li = document.createElement("li");
+            const li = document.createElement("li");
             
-        //     li.className = "task";
-        //     li.innerHTML = `<span>${task.title} - ${task.description}</span>
-        //         <button onclick="removeTask(${task.id})">Delete</button>
-        //         <input type="checkbox" ${task.completed ? "checked" : ""} 
-        //         onclick="toggleTaskCompletion(${task.id})">`;
-            
-        //     taskList.appendChild(li);
+            li.className = "task";
 
-            taskList.innerHTML = "";
-    const tasks = await fetchTasks();
+            const taskDate = new Date(task.timestamp).toLocaleString();
 
-    tasks.forEach(task => {
-        const li = document.createElement("li");
-        li.className = "task";
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = task.completed;
-
-        // ✅ Attach event listener directly to the checkbox
-        checkbox.addEventListener("change", () => toggleTaskCompletion(task.id));
-
-        li.innerHTML = `
-            <span class="${task.completed ? "completed" : ""}">${task.title} - ${task.description}</span>
+            li.innerHTML = `
+            <input type="checkbox" ${task.completed ? "checked" : ""} 
+                onclick="toggleCompletion(${task.id})">
+            <span class="task-title">${task.title}</span>
+            <span class="task-desc">${task.description}</span>
+            <span class="task-time">Created: ${taskDate}</span>
             <button onclick="removeTask(${task.id})">Delete</button>
-        `;
-
-        li.prepend(checkbox);
-        taskList.appendChild(li)
-        });
+            <button onclick="startEdit(${task.id})">Edit</button>`;
+            
+            taskList.appendChild(li);
+     });
     }
 
-    window.toggleTaskCompletion = async (id) => {
+    window.toggleCompletion = async (id) => {
         
         await toggleTaskCompletion(id);
         loadTasks();
@@ -72,10 +59,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         loadTasks();
     };
 
-    //loadTasks();
 
 
-    window.login = function(){
+    window.login = async function(){
 
         const user = document.getElementById("username").value;
         const pass = document.getElementById("password").value;
@@ -86,6 +72,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        const isValid = await validateCredentials(user, pass);
+    if (!isValid) {
+        alert("Invalid username or password. Please try again.");
+        return;  
+    }
+
         localStorage.setItem("username", user);
         localStorage.setItem("password", pass);
 
@@ -95,7 +87,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+    window.startEdit = (id) => {
 
+        const taskElement = document.querySelector(`button[onclick="startEdit(${id})"]`).parentElement;
+        const titleSpan = taskElement.querySelector(".task-title");
+        const descSpan = taskElement.querySelector(".task-desc");
+
+        titleSpan.innerHTML = `<input type="text" value="${titleSpan.innerText}" id="edit-title-${id}">`;
+        descSpan.innerHTML = `<input type="text" value="${descSpan.innerText}" id="edit-desc-${id}">`;
+
+        taskElement.querySelector(`button[onclick="startEdit(${id})"]`).outerHTML = 
+        `<button onclick="saveEdit(${id})">Save</button>`;
+    
+    };
+
+    window.saveEdit = async (id) => {
+
+        const newTitle = document.getElementById(`edit-title-${id}`).value;
+        const newDesc = document.getElementById(`edit-desc-${id}`).value;
+
+        await editTask(id, newTitle, newDesc);
+        loadTasks();  
+};
 
 
 });

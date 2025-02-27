@@ -7,7 +7,7 @@ function getAuthHeader(){
 
     if (!user || !pass) {
         console.error("Error: Missing username or password");
-        return null; // Prevents sending invalid headers
+        return null; 
     }
 
     return "Basic " + btoa(user + ":" + pass)
@@ -16,20 +16,9 @@ function getAuthHeader(){
 
 async function fetchTasks() {
 
-    // const response = await fetch(API_URL, {
-    //     headers: {"Authorization": getAuthHeader()}
-    // });
-    // return response.json();
-
-    const authHeader = getAuthHeader();
-    if (!authHeader) {
-        console.warn("Skipping API call: No credentials found.");
-        return []; // Return an empty array instead of making an invalid request
-    }
-
     const response = await fetch(API_URL, {
         headers: {
-            "Authorization": authHeader
+            "Authorization": getAuthHeader()
         }
     });
 
@@ -39,7 +28,6 @@ async function fetchTasks() {
     }
 
     const data = await response.json();
-    console.log("API Response:", data);
     return data;
 
 }
@@ -71,4 +59,32 @@ async function toggleTaskCompletion(id) {
         headers: { "Authorization": getAuthHeader() }
     });
     return response.json()
+}
+
+
+async function editTask(id, title, description) {
+    const response = await fetch(`${API_URL}/${id}/edit`,{
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": getAuthHeader()
+        },
+        body: JSON.stringify({title, description, completed: false})
+    });
+
+    return response.json();
+}
+
+
+async function validateCredentials(username, password) {
+
+    const authHeader = "Basic " + btoa(username + ":" + password);
+
+    const response = await fetch(API_URL, {
+        method: "GET",
+        headers: { "Authorization": authHeader }
+    });
+
+    return response.ok; 
+    
 }
